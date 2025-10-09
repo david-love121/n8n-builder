@@ -1,0 +1,3 @@
+docker image rm context7-mcp
+docker build -t context7-mcp:latest .
+

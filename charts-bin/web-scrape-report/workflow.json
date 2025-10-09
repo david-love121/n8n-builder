@@ -1,0 +1,211 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ],
+      "webhookId": "eb9d2353-4e66-4572-bc25-4d4b2bb4583d"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "query": "={{$json['body'].prompt}}",
+        "options": {
+          "limit": 5
+        }
+      },
+      "name": "WebScraper",
+      "type": "n8n-nodes-base.webScraper",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "string": [
+            {
+              "value1": "={{$json['items']}}",
+              "operation": "notEmpty"
+            }
+          ]
+        }
+      },
+      "name": "DataFound?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const summary = items[0].json.results\n  .map(result => `* ${result.title}\\n  **Relevance**: ${result.snippet}`)\n  .join('\\n\\n');\n\nreturn { summary };"
+      },
+      "name": "GenerateSummary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "web-research-summary-{{$json['body'].email}}",
+        "options": {}
+      },
+      "name": "CreatePDF",
+      "type": "n8n-nodes-base.pdf",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "send": {
+          "to": "={{$json['body'].email}}",
+          "subject": "Your Web Research Summary",
+          "body": "Please find attached your requested research summary.",
+          "attachments": {
+            "binary": {
+              "data": "={{ $json['pdf'] }}"
+            }
+          }
+        }
+      },
+      "name": "EmailPDF",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "level": "error",
+        "message": "No data found for prompt: {{$json['body'].prompt}}"
+      },
+      "name": "LogError",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        900,
+        500
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "WebScraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WebScraper": {
+      "main": [
+        [
+          {
+            "node": "DataFound?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DataFound?": {
+      "main": [
+        [
+          {
+            "node": "GenerateSummary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LogError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GenerateSummary": {
+      "main": [
+        [
+          {
+            "node": "CreatePDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreatePDF": {
+      "main": [
+        [
+          {
+            "node": "EmailPDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EmailPDF": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogError": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "123"
+}

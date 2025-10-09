@@ -1,0 +1,20 @@
+automation_name: web-scrape-report
+user_prompt: Recieve a prompt from a user from a web form. This prompt will be used
+  to scrape the web for relevant data. You should then summarize your findings as
+  a bulleted list, with each finding as a bullet followed by an explanation of the
+  relevance. After this, you should email a pdf of your responses to the user.
+model_prompt: "Create a mermaid flowchart for the following automation: Recieve a\
+  \ prompt from a user from a web form. This prompt will be used to scrape the web\
+  \ for relevant data. You should then summarize your findings as a bulleted list,\
+  \ with each finding as a bullet followed by an explanation of the relevance. After\
+  \ this, you should email a pdf of your responses to the user. \n\n Your output should\
+  \ contain only ONE mermaid diagram. You should follow your diagram with a brief\
+  \ explanation of how the automation works. Format your response like: ```mermaid\n\
+  <your diagram here>\n```\n<your explanation here>"
+mermaid_code: "flowchart TD\n    A[User Submits Prompt via Web Form] --> B[Automation\
+  \ Receives Prompt]\n    B --> C[Scrape Web for Relevant Data]\n    C --> D{Data\
+  \ Found?}\n    D -- Yes --> E[Process & Analyze Data]\n    D -- No --> F[Log Error:\
+  \ No Data Found]\n    F --> Z[End]\n    E --> G[Generate Summary:<br/>- Bulleted\
+  \ List<br/>- Finding & Relevance]\n    G --> H[Format Summary into PDF]\n    H -->\
+  \ I[Email PDF to User]\n    I --> Z"
+created_at: '2025-10-06T15:12:31'

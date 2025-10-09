@@ -1,0 +1,3 @@
+web-scrape-report
+
+Recieve a prompt from a user from a web form. This prompt will be used to scrape the web for relevant data. You should then summarize your findings as a bulleted list, with each finding as a bullet followed by an explanation of the relevance. After this, you should email a pdf of your responses to the user.
