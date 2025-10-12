@@ -1,11 +1,10 @@
 import asyncio
-import logging
+import json
 import os
 import re
-import shlex
 import sys
-from contextlib import asynccontextmanager
-from dataclasses import dataclass
+
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
@@ -13,10 +12,10 @@ from typing import Any, Dict, Optional, Tuple, Union
 import httpx
 import yaml
 from dotenv import load_dotenv
-from fastmcp import Client
-from fastmcp.client.transports import StdioTransport, StreamableHttpTransport
-from httpx import AsyncClient
+
 from openai import OpenAI
+from MCPDockerClientManager import MCPDockerClientManager
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DOTENV_PATH = PROJECT_ROOT / ".env"
@@ -24,20 +23,14 @@ DOTENV_PATH = PROJECT_ROOT / ".env"
 
 def load_project_dotenv() -> None:
     load_dotenv(dotenv_path=DOTENV_PATH, override=False)
-    print(os.environ)
-
-_MCP_DEBUG = os.getenv("MCP_DEBUG", "").lower() in {"1", "true", "yes", "on"}
-logging.basicConfig(
-    level=logging.DEBUG if _MCP_DEBUG else logging.INFO,
-    format="[%(asctime)s] %(levelname)s %(name)s: %(message)s",
-)
-LOGGER = logging.getLogger("mcp.docker")
 
 
 def require_env(variable: str) -> str:
     value = os.getenv(variable)
     if not value:
-        raise RuntimeError(f"Environment variable '{variable}' is required but missing.")
+        raise RuntimeError(
+            f"Environment variable '{variable}' is required but missing."
+        )
     return value
 
 
@@ -45,8 +38,144 @@ class OpenAIClient:
     def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1"):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
-    def create_completion(self, messages: list, model: str = "openai/gpt-4o"):
-        return self.client.chat.completions.create(model=model, messages=messages)
+    def create_completion(
+        self, messages: list, model: str = "openai/gpt-4o", tools: list = []
+    ):
+        return self.client.chat.completions.create(
+            model=model, messages=messages, stream=False, tools=tools
+        )
+
+
+def _serialize_tool_result(result: Any) -> str:
+    if isinstance(result, str):
+        return result
+    try:
+        return json.dumps(result, ensure_ascii=False)
+    except TypeError:
+        return str(result)
+
+
+def run_completion_with_mcp_tools(
+    client: OpenAIClient,
+    mcp_manager: MCPDockerClientManager,
+    messages: list[Dict[str, Any]],
+    model: str,
+) -> tuple[Any, list[Dict[str, Any]], list[Dict[str, Any]]]:
+    """Execute an OpenAI-compatible chat completion with MCP tool support.
+
+    Returns the final completion object, the accumulated chat history, and a list of
+    executed tool call results for downstream inspection.
+    """
+
+    history: list[Dict[str, Any]] = list(messages)
+    tool_runs: list[Dict[str, Any]] = []
+    tool_definitions = mcp_manager.tool_definitions_for_openai()
+
+    while True:
+        completion = client.create_completion(
+            messages=history,
+            model=model,
+            tools=tool_definitions,
+        )
+
+        choice = completion.choices[0]
+        message = choice.message
+        tool_calls = getattr(message, "tool_calls", None) or []
+
+        assistant_payload: Dict[str, Any] = {
+            "role": "assistant",
+            "content": getattr(message, "content", None) or "",
+        }
+        if tool_calls:
+            assistant_payload["tool_calls"] = [
+                {
+                    "id": getattr(call, "id", None),
+                    "type": getattr(call, "type", None),
+                    "function": {
+                        "name": getattr(getattr(call, "function", None), "name", None),
+                        "arguments": getattr(
+                            getattr(call, "function", None), "arguments", ""
+                        ),
+                    },
+                }
+                for call in tool_calls
+            ]
+        history.append(assistant_payload)
+
+        if not tool_calls:
+            return completion, history, tool_runs
+
+        for call in tool_calls:
+            execution = mcp_manager.execute_openai_tool_call(call)
+            tool_runs.append(execution)
+            history.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": execution["tool_call_id"]
+                    or getattr(call, "id", None),
+                    "content": _serialize_tool_result(execution["result"]),
+                }
+            )
+
+
+def _extract_json_from_text(text: str) -> Optional[Any]:
+    stripped = (text or "").strip()
+    if not stripped:
+        return None
+
+    if stripped.startswith("```") and stripped.endswith("```"):
+        _, _, inner = stripped.partition("\n")
+        inner = inner.rstrip("`").strip()
+        stripped = inner
+
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+
+
+def execute_mcp_tool_from_json(
+    mcp_manager: MCPDockerClientManager, payload: Any
+) -> list[Dict[str, Any]]:
+    """Execute one or more MCP tool invocations described by JSON payloads."""
+
+    if payload is None:
+        return []
+
+    instructions = payload if isinstance(payload, list) else [payload]
+    executions: list[Dict[str, Any]] = []
+
+    for entry in instructions:
+        if not isinstance(entry, dict):
+            continue
+
+        qualified = entry.get("qualified_name") or entry.get("tool")
+        if not qualified:
+            server = entry.get("server") or entry.get("server_identifier")
+            tool = entry.get("tool_name") or entry.get("toolId") or entry.get("name")
+            if server and tool:
+                qualified = f"{server}::{tool}"
+
+        if not qualified:
+            continue
+
+        arguments = entry.get("arguments") or entry.get("params") or {}
+        if isinstance(arguments, str):
+            try:
+                arguments = json.loads(arguments)
+            except json.JSONDecodeError:
+                arguments = {"_raw": arguments}
+
+        execution = mcp_manager.call_tool_by_qualified_name(qualified, arguments)
+        executions.append(
+            {
+                "qualified_name": qualified,
+                "arguments": arguments,
+                "result": execution,
+            }
+        )
+
+    return executions
 
 
 def extract_mermaid_diagram(text: str) -> Optional[str]:
@@ -148,309 +277,10 @@ def collect_user_inputs() -> Tuple[str, str]:
     return automation_name, user_prompt
 
 
-
-@dataclass
-class DockerMCPServerConfig:
-    identifier: str
-    image: str
-    display_name: str
-    docker_run_args: list[str]
-    command: list[str]
-    environment: Dict[str, str]
-    transport: str = "stdio"
-    http_url: Optional[str] = None
-    startup_timeout: float = 30.0
-
-
-def _normalize_identifier(value: str) -> str:
-    return re.sub(r"[^A-Z0-9]", "_", value.upper())
-
-
-def _parse_env_mapping(raw: str | None) -> Dict[str, str]:
-    if not raw:
-        return {}
-    pairs = {}
-    for item in raw.split(";"):
-        key, sep, val = item.partition("=")
-        key = key.strip()
-        if not key:
-            continue
-
-        value = val.strip() if sep else ""
-        if not value:
-            env_value = os.getenv(key)
-            if env_value is None:
-                LOGGER.warning(
-                    "Environment variable '%s' not found while configuring MCP docker env", key
-                )
-                continue
-            value = env_value
-        pairs[key] = value
-    return pairs
-
-
-def _split_args(raw: str | None) -> list[str]:
-    if not raw:
-        return []
-    return shlex.split(raw)
-
-
-def load_docker_mcp_servers() -> list[DockerMCPServerConfig]:
-    servers_raw = os.getenv("MCP_DOCKER_SERVERS", "")
-    identifiers = [item.strip() for item in servers_raw.split(",") if item.strip()]
-    configs: list[DockerMCPServerConfig] = []
-
-    for identifier in identifiers:
-        normalized = _normalize_identifier(identifier)
-        image = os.getenv(f"MCP_DOCKER_{normalized}_IMAGE")
-        if not image:
-            continue
-
-        display_name = os.getenv(f"MCP_DOCKER_{normalized}_NAME", identifier)
-        docker_args = _split_args(os.getenv(f"MCP_DOCKER_{normalized}_RUN_ARGS"))
-        command = _split_args(os.getenv(f"MCP_DOCKER_{normalized}_CMD"))
-        env_map = _parse_env_mapping(os.getenv(f"MCP_DOCKER_{normalized}_ENV"))
-        transport = os.getenv(f"MCP_DOCKER_{normalized}_TRANSPORT", "stdio").strip().lower() or "stdio"
-        http_url = os.getenv(f"MCP_DOCKER_{normalized}_URL")
-        try:
-            startup_timeout = float(os.getenv(f"MCP_DOCKER_{normalized}_STARTUP_TIMEOUT", "30"))
-        except ValueError:
-            startup_timeout = 30.0
-
-        if transport == "http" and not http_url:
-            LOGGER.warning(
-                "Skipping MCP server '%s' because HTTP transport requires MCP_DOCKER_%s_URL",
-                identifier,
-                normalized,
-            )
-            continue
-
-        configs.append(
-            DockerMCPServerConfig(
-                identifier=identifier,
-                image=image,
-                display_name=display_name,
-                docker_run_args=docker_args,
-                command=command,
-                environment=env_map,
-                transport=transport,
-                http_url=http_url,
-                startup_timeout=startup_timeout,
-            )
-        )
-
-    return configs
-
-
-def _build_transport_args(config: DockerMCPServerConfig) -> list[str]:
-    args: list[str] = ["run", "--rm"]
-    if config.transport == "stdio":
-        args.append("--interactive")
-    for key, value in config.environment.items():
-        args.extend(["-e", f"{key}={value}"])
-    args.extend(config.docker_run_args)
-    args.append(config.image)
-    args.extend(config.command)
-    if _MCP_DEBUG:
-        LOGGER.debug(
-            "Launching MCP server '%s' with command: %s",
-            config.identifier,
-            shlex.join(["docker", *args]),
-        )
-    return args
-
-
-class MCPDockerClientManager:
-    def __init__(self):
-        self._configs = load_docker_mcp_servers()
-
-    def refresh(self) -> None:
-        self._configs = load_docker_mcp_servers()
-
-    def describe_tools(self) -> Optional[str]:
-        if not self._configs:
-            return None
-        try:
-            return asyncio.run(self._describe_tools_async())
-        except RuntimeError as exc:
-            raise RuntimeError(
-                "describe_tools() must be awaited when used inside an active event loop"
-            ) from exc
-
-    async def _describe_tools_async(self) -> str:
-        sections: list[str] = []
-        for config in self._configs:
-            section = await self._collect_server_summary(config)
-            sections.append(section)
-        return "\n\n".join(sections)
-
-    async def _collect_server_summary(self, config: DockerMCPServerConfig) -> str:
-        if config.transport == "http":
-            return await self._collect_http_server_summary(config)
-
-        transport_args = _build_transport_args(config)
-        transport = StdioTransport(
-            command="docker",
-            args=transport_args,
-            keep_alive=False,
-        )
-        client = Client(transport)
-        header = f"MCP Server: {config.display_name}"
-
-        try:
-            async with client:
-                tools = await client.list_tools()
-        except Exception as exc:  # noqa: BLE001
-            LOGGER.exception("Failed to collect tools for '%s'", config.identifier)
-            return f"{header}\n  Error: {exc}"
-
-        if not tools:
-            return f"{header}\n  No tools reported."
-
-        lines = [header]
-        for tool in tools:
-            description = getattr(tool, "description", "") or "No description provided."
-            lines.append(f"  - {tool.name}: {description}")
-        return "\n".join(lines)
-
-    def call_tool(self, server_identifier: str, tool_name: str, arguments: Dict[str, Any]) -> Any:
-        config = self._get_config(server_identifier)
-        if not config:
-            raise ValueError(f"Unknown MCP server '{server_identifier}'.")
-        try:
-            return asyncio.run(self._call_tool_async(config, tool_name, arguments))
-        except RuntimeError as exc:
-            raise RuntimeError(
-                "call_tool() must be awaited when used inside an active event loop"
-            ) from exc
-
-    def _get_config(self, identifier: str) -> Optional[DockerMCPServerConfig]:
-        for config in self._configs:
-            if config.identifier == identifier:
-                return config
-        return None
-
-    async def _call_tool_async(
-        self,
-        config: DockerMCPServerConfig,
-        tool_name: str,
-        arguments: Dict[str, Any],
-    ) -> Any:
-        if config.transport == "http":
-            return await self._call_tool_http(config, tool_name, arguments)
-
-        transport_args = _build_transport_args(config)
-        transport = StdioTransport(
-            command="docker",
-            args=transport_args,
-            keep_alive=False,
-        )
-        client = Client(transport, timeout=60.0)
-
-        async with client:
-            result = await client.call_tool(tool_name, arguments)
-        return getattr(result, "content", result)
-
-    async def _collect_http_server_summary(self, config: DockerMCPServerConfig) -> str:
-        header = f"MCP Server: {config.display_name}"
-        async with self._run_http_container(config) as transport:
-            client = Client(transport)
-            try:
-                async with client:
-                    tools = await client.list_tools()
-            except Exception as exc:  # noqa: BLE001
-                LOGGER.exception("Failed to collect tools for '%s'", config.identifier)
-                return f"{header}\n  Error: {exc}"
-
-        if not tools:
-            return f"{header}\n  No tools reported."
-
-        lines = [header]
-        for tool in tools:
-            description = getattr(tool, "description", "") or "No description provided."
-            lines.append(f"  - {tool.name}: {description}")
-        return "\n".join(lines)
-
-    async def _call_tool_http(
-        self,
-        config: DockerMCPServerConfig,
-        tool_name: str,
-        arguments: Dict[str, Any],
-    ) -> Any:
-        async with self._run_http_container(config) as transport:
-            client = Client(transport, timeout=60.0)
-            async with client:
-                result = await client.call_tool(tool_name, arguments)
-        return getattr(result, "content", result)
-
-    @asynccontextmanager
-    async def _run_http_container(self, config: DockerMCPServerConfig):
-        assert config.http_url, "HTTP transport requires a target URL"
-        command = ["docker", *_build_transport_args(config)]
-        LOGGER.debug("Starting HTTP MCP container for '%s'", config.identifier)
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        stderr_task = asyncio.create_task(self._drain_stream(process.stderr, config.identifier))
-
-        try:
-            await self._wait_for_http_ready(config.http_url, config.startup_timeout)
-            transport = StreamableHttpTransport(url=config.http_url)
-            yield transport
-        finally:
-            if process.returncode is None:
-                process.terminate()
-                try:
-                    await asyncio.wait_for(process.wait(), timeout=5)
-                except asyncio.TimeoutError:
-                    process.kill()
-                    await process.wait()
-
-            await stderr_task
-
-    async def _wait_for_http_ready(self, url: str, timeout: float) -> None:
-        deadline = asyncio.get_event_loop().time() + max(timeout, 1.0)
-        async with AsyncClient(timeout=5.0) as client:
-            while True:
-                try:
-                    response = await client.get(url)
-                    if response.status_code < 400:
-                        return
-                except Exception:  # noqa: BLE001
-                    await asyncio.sleep(0.5)
-
-                if asyncio.get_event_loop().time() >= deadline:
-                    raise TimeoutError(f"Timed out waiting for MCP HTTP server at {url}")
-
-    async def _drain_stream(self, stream: asyncio.StreamReader | None, identifier: str) -> None:
-        if not stream:
-            return
-        while not stream.at_eof():
-            line = await stream.readline()
-            if not line:
-                break
-            LOGGER.debug("[%s stderr] %s", identifier, line.decode(errors="ignore").rstrip())
-
-
-
-
-
-def describe_mcp_tools() -> Optional[str]:
-    MCP_CLIENT_MANAGER.refresh()
-    summary = MCP_CLIENT_MANAGER.describe_tools()
-    if not summary:
-        return None
-    return "Available MCP tools:\n" + summary
-
-
-
 # Creates a mermaid diagram based on the user prompt, to be fed into automation builder
-def planner():
+def planner(mcp_manager: MCPDockerClientManager):
     load_project_dotenv()
-    mcp_info = describe_mcp_tools()
+    mcp_info = mcp_manager.describe_mcp_tools()
     if mcp_info:
         print(mcp_info)
     client = OpenAIClient(
@@ -479,6 +309,16 @@ def planner():
 
     print(message_content)
 
+    json_payload = _extract_json_from_text(message_content)
+    if json_payload:
+        manual_tool_runs = execute_mcp_tool_from_json(mcp_manager, json_payload)
+        if manual_tool_runs:
+            print("Executed MCP tool calls from JSON payload:")
+            for run in manual_tool_runs:
+                print(
+                    f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
+                )
+
     mermaid_diagram = extract_mermaid_diagram(message_content)
     if not mermaid_diagram:
         print("No mermaid diagram detected in the response.")
@@ -503,10 +343,11 @@ def planner():
     print(f"Mermaid diagram saved to {output_file.resolve()}")
     print(f"Metadata saved to {metadata_file.resolve()}")
 
+
 # Creates the automation based on the user prompt and the generated mermaid diagram
-def builder():
+def builder(mcp_manager: MCPDockerClientManager):
     load_project_dotenv()
-    mcp_info = describe_mcp_tools()
+    mcp_info = mcp_manager.describe_mcp_tools()
     if mcp_info:
         print(mcp_info)
     client = OpenAIClient(
@@ -528,10 +369,20 @@ def builder():
     User prompt: {user_prompt} \n
     mermaid diagram: ```mermaid\n{mermaid_code}\n``` 
     Your output should be a valid n8n workflow JSON, enclosed in triple backticks like: ```json\n<your json here>\n```"""
-    completion = client.create_completion(
-        messages=[{"role": "user", "content": model_prompt}],
+    initial_messages = [{"role": "user", "content": model_prompt}]
+    completion, _, tool_runs = run_completion_with_mcp_tools(
+        client,
+        mcp_manager,
+        initial_messages,
         model="tngtech/deepseek-r1t2-chimera:free",
     )
+
+    if tool_runs:
+        print("Executed MCP tool calls:")
+        for run in tool_runs:
+            print(
+                f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
+            )
     # Extract the JSON workflow from the response
     message_content = ""
     if getattr(completion, "choices", None):
@@ -556,12 +407,53 @@ def builder():
     )
     print(f"n8n workflow saved to {workflow_file.resolve()}")
 
+
 def main():
-    builder()
+    load_project_dotenv()
+    MCP_CLIENT_MANAGER = MCPDockerClientManager()
+    human_summary = MCP_CLIENT_MANAGER.describe_mcp_tools()
+    if human_summary:
+        print(human_summary)
+
+    client = OpenAIClient(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=require_env("OPENROUTER_KEY"),
+    )
+
+    messages = [
+        {
+            "role": "user",
+            "content": "Use the context7 MCP to find documentation on n8n.",
+        }
+    ]
+    completion, _, tool_runs = run_completion_with_mcp_tools(
+        client,
+        MCP_CLIENT_MANAGER,
+        messages,
+        model="deepseek/deepseek-chat-v3-0324",
+    )
+
+    completion_content = getattr(completion.choices[0].message, "content", "")
+    print(completion_content)
+    if tool_runs:
+        print("Executed MCP tool calls:")
+        for run in tool_runs:
+            print(
+                f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
+            )
+
+    json_payload = _extract_json_from_text(completion_content)
+    if json_payload:
+        manual_tool_runs = execute_mcp_tool_from_json(MCP_CLIENT_MANAGER, json_payload)
+        if manual_tool_runs:
+            print("Executed MCP tool calls from JSON payload:")
+            for run in manual_tool_runs:
+                print(
+                    f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
+                )
+
+    builder(MCP_CLIENT_MANAGER)
 
 
 if __name__ == "__main__":
-    
-    load_project_dotenv()
-    MCP_CLIENT_MANAGER = MCPDockerClientManager()
     main()
