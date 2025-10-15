@@ -14,7 +14,7 @@ import yaml
 from dotenv import load_dotenv
 
 from openai import OpenAI
-from MCPDockerClientManager import MCPDockerClientManager
+from MCPStreamableHttp import MCPStreamableHttp
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -35,147 +35,21 @@ def require_env(variable: str) -> str:
 
 
 class OpenAIClient:
-    def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1"):
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
-
-    def create_completion(
-        self, messages: list, model: str = "openai/gpt-4o", tools: list = []
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str,
+        base_url: str = "https://api.openai.com/v1",
+        tools: list[str] = [],
     ):
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.model_name = model_name
+        self.tools = tools
+
+    def create_completion(self, messages: list):
         return self.client.chat.completions.create(
-            model=model, messages=messages, stream=False, tools=tools
+            model=self.model_name, messages=messages, stream=False, tools=self.tools
         )
-
-
-def _serialize_tool_result(result: Any) -> str:
-    if isinstance(result, str):
-        return result
-    try:
-        return json.dumps(result, ensure_ascii=False)
-    except TypeError:
-        return str(result)
-
-
-def run_completion_with_mcp_tools(
-    client: OpenAIClient,
-    mcp_manager: MCPDockerClientManager,
-    messages: list[Dict[str, Any]],
-    model: str,
-) -> tuple[Any, list[Dict[str, Any]], list[Dict[str, Any]]]:
-    """Execute an OpenAI-compatible chat completion with MCP tool support.
-
-    Returns the final completion object, the accumulated chat history, and a list of
-    executed tool call results for downstream inspection.
-    """
-
-    history: list[Dict[str, Any]] = list(messages)
-    tool_runs: list[Dict[str, Any]] = []
-    tool_definitions = mcp_manager.tool_definitions_for_openai()
-
-    while True:
-        completion = client.create_completion(
-            messages=history,
-            model=model,
-            tools=tool_definitions,
-        )
-
-        choice = completion.choices[0]
-        message = choice.message
-        tool_calls = getattr(message, "tool_calls", None) or []
-
-        assistant_payload: Dict[str, Any] = {
-            "role": "assistant",
-            "content": getattr(message, "content", None) or "",
-        }
-        if tool_calls:
-            assistant_payload["tool_calls"] = [
-                {
-                    "id": getattr(call, "id", None),
-                    "type": getattr(call, "type", None),
-                    "function": {
-                        "name": getattr(getattr(call, "function", None), "name", None),
-                        "arguments": getattr(
-                            getattr(call, "function", None), "arguments", ""
-                        ),
-                    },
-                }
-                for call in tool_calls
-            ]
-        history.append(assistant_payload)
-
-        if not tool_calls:
-            return completion, history, tool_runs
-
-        for call in tool_calls:
-            execution = mcp_manager.execute_openai_tool_call(call)
-            tool_runs.append(execution)
-            history.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": execution["tool_call_id"]
-                    or getattr(call, "id", None),
-                    "content": _serialize_tool_result(execution["result"]),
-                }
-            )
-
-
-def _extract_json_from_text(text: str) -> Optional[Any]:
-    stripped = (text or "").strip()
-    if not stripped:
-        return None
-
-    if stripped.startswith("```") and stripped.endswith("```"):
-        _, _, inner = stripped.partition("\n")
-        inner = inner.rstrip("`").strip()
-        stripped = inner
-
-    try:
-        return json.loads(stripped)
-    except json.JSONDecodeError:
-        return None
-
-
-def execute_mcp_tool_from_json(
-    mcp_manager: MCPDockerClientManager, payload: Any
-) -> list[Dict[str, Any]]:
-    """Execute one or more MCP tool invocations described by JSON payloads."""
-
-    if payload is None:
-        return []
-
-    instructions = payload if isinstance(payload, list) else [payload]
-    executions: list[Dict[str, Any]] = []
-
-    for entry in instructions:
-        if not isinstance(entry, dict):
-            continue
-
-        qualified = entry.get("qualified_name") or entry.get("tool")
-        if not qualified:
-            server = entry.get("server") or entry.get("server_identifier")
-            tool = entry.get("tool_name") or entry.get("toolId") or entry.get("name")
-            if server and tool:
-                qualified = f"{server}::{tool}"
-
-        if not qualified:
-            continue
-
-        arguments = entry.get("arguments") or entry.get("params") or {}
-        if isinstance(arguments, str):
-            try:
-                arguments = json.loads(arguments)
-            except json.JSONDecodeError:
-                arguments = {"_raw": arguments}
-
-        execution = mcp_manager.call_tool_by_qualified_name(qualified, arguments)
-        executions.append(
-            {
-                "qualified_name": qualified,
-                "arguments": arguments,
-                "result": execution,
-            }
-        )
-
-    return executions
 
 
 def extract_mermaid_diagram(text: str) -> Optional[str]:
@@ -278,8 +152,7 @@ def collect_user_inputs() -> Tuple[str, str]:
 
 
 # Creates a mermaid diagram based on the user prompt, to be fed into automation builder
-def planner(mcp_manager: MCPDockerClientManager):
-    load_project_dotenv()
+def planner(mcp_manager: MCPStreamableHttp):
     mcp_info = mcp_manager.describe_mcp_tools()
     if mcp_info:
         print(mcp_info)
@@ -309,16 +182,6 @@ def planner(mcp_manager: MCPDockerClientManager):
 
     print(message_content)
 
-    json_payload = _extract_json_from_text(message_content)
-    if json_payload:
-        manual_tool_runs = execute_mcp_tool_from_json(mcp_manager, json_payload)
-        if manual_tool_runs:
-            print("Executed MCP tool calls from JSON payload:")
-            for run in manual_tool_runs:
-                print(
-                    f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
-                )
-
     mermaid_diagram = extract_mermaid_diagram(message_content)
     if not mermaid_diagram:
         print("No mermaid diagram detected in the response.")
@@ -345,15 +208,7 @@ def planner(mcp_manager: MCPDockerClientManager):
 
 
 # Creates the automation based on the user prompt and the generated mermaid diagram
-def builder(mcp_manager: MCPDockerClientManager):
-    load_project_dotenv()
-    mcp_info = mcp_manager.describe_mcp_tools()
-    if mcp_info:
-        print(mcp_info)
-    client = OpenAIClient(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=require_env("OPENROUTER_KEY"),
-    )
+def builder(mcp_manager: MCPStreamableHttp, client: OpenAIClient):
     automation_name = input("Enter the automation name: ").strip()
     output_directory = ensure_output_directory(automation_name)
     # Retrieve metadata to prompt model
@@ -370,19 +225,11 @@ def builder(mcp_manager: MCPDockerClientManager):
     mermaid diagram: ```mermaid\n{mermaid_code}\n``` 
     Your output should be a valid n8n workflow JSON, enclosed in triple backticks like: ```json\n<your json here>\n```"""
     initial_messages = [{"role": "user", "content": model_prompt}]
-    completion, _, tool_runs = run_completion_with_mcp_tools(
-        client,
-        mcp_manager,
-        initial_messages,
-        model="tngtech/deepseek-r1t2-chimera:free",
+    completion = client.create_completion(
+        messages=initial_messages,
+        model="deepseek/deepseek-chat-v3.1:free",
+        tools=mcp_manager.tools,
     )
-
-    if tool_runs:
-        print("Executed MCP tool calls:")
-        for run in tool_runs:
-            print(
-                f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
-            )
     # Extract the JSON workflow from the response
     message_content = ""
     if getattr(completion, "choices", None):
@@ -408,52 +255,29 @@ def builder(mcp_manager: MCPDockerClientManager):
     print(f"n8n workflow saved to {workflow_file.resolve()}")
 
 
-def main():
+async def main():
     load_project_dotenv()
-    MCP_CLIENT_MANAGER = MCPDockerClientManager()
-    human_summary = MCP_CLIENT_MANAGER.describe_mcp_tools()
-    if human_summary:
-        print(human_summary)
 
-    client = OpenAIClient(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=require_env("OPENROUTER_KEY"),
-    )
+    async with MCPStreamableHttp(
+        url=require_env("MCP_URL"), bearer=require_env("MCP_BEARER")
+    ) as mcp_manager:
+        openai_formatted_tools = await mcp_manager.openai_compatible_tools()
+        client = OpenAIClient(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=require_env("OPENROUTER_KEY"),
+            model_name="x-ai/grok-code-fast-1",
+            tools=openai_formatted_tools,
+        )
 
-    messages = [
-        {
-            "role": "user",
-            "content": "Use the context7 MCP to find documentation on n8n.",
-        }
-    ]
-    completion, _, tool_runs = run_completion_with_mcp_tools(
-        client,
-        MCP_CLIENT_MANAGER,
-        messages,
-        model="deepseek/deepseek-chat-v3-0324",
-    )
-
-    completion_content = getattr(completion.choices[0].message, "content", "")
-    print(completion_content)
-    if tool_runs:
-        print("Executed MCP tool calls:")
-        for run in tool_runs:
-            print(
-                f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
-            )
-
-    json_payload = _extract_json_from_text(completion_content)
-    if json_payload:
-        manual_tool_runs = execute_mcp_tool_from_json(MCP_CLIENT_MANAGER, json_payload)
-        if manual_tool_runs:
-            print("Executed MCP tool calls from JSON payload:")
-            for run in manual_tool_runs:
-                print(
-                    f"- {run['qualified_name']} with args {run['arguments']} -> {run['result']}"
-                )
-
-    builder(MCP_CLIENT_MANAGER)
+        messages = [
+            {
+                "role": "user",
+                "content": "Use the resolve-library-id tool to find the context7 specific library-id for n8n",
+            }
+        ]
+        response = client.create_completion(messages=messages)
+        print(response)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
