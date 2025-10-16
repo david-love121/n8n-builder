@@ -1,7 +1,7 @@
-import asyncio
+import json
+
 from fastmcp import Client
 from fastmcp.client.auth import BearerAuth
-import json
 from fastmcp.tools import Tool
 
 
@@ -17,7 +17,7 @@ def get_tool_json(tool: Tool):
 
 
 class MCPStreamableHttp:
-    def __init__(self, url: str, bearer: str = None):
+    def __init__(self, url: str, bearer: str | None = None):
         self.url = url
         self.bearer_token = BearerAuth(bearer) if bearer else None
         self.tools = None
