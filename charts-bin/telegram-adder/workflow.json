@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "instanceId": "workflow-generated-instance-id",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "a97914e6-d71d-4074-b52e-c7edb2ee93c8",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [
+        -280,
+        0
+      ],
+      "parameters": {
+        "webhookEvents": {
+          "values": [
+            {
+              "event": "message"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 1,
+      "credentials": {
+        "telegramApi": {
+          "id": "replace_with_telegram_credential_id",
+          "name": "Telegram Acct"
+        }
+      }
+    },
+    {
+      "id": "e969966d-14f7-4638-aa21-72f53412a84d",
+      "name": "IF: Message starts with 'Add: '",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -90,
+        0
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 1,
+            "alwaysOutputData": true
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1d2a106c-850c-4fa2-9363-2287c8d92754",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              },
+              "leftValue": "={{$json.message.text}}",
+              "rightValue": "Add: "
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "76afb50d-d421-4f1b-a53c-13615177a72d",
+      "name": "Code: Extract & Calculate",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        130,
+        -55
+      ],
+      "parameters": {
+        "jsCode": "const messageText = $input.first().json.message.text;\nconst chatId = $input.first().json.message.chat.id;\n\n// Regex to match 'Add: x + y'\n// /Add:\\s*(\\d+)\\s*\\+\\s*(\\d+)/i\nconst match = messageText.match(/Add:\\s*(\\d+)\\s*\\+\\s*(\\d+)/i);\n\nif (match && match.length === 3) {\n  const x = parseInt(match[1]);\n  const y = parseInt(match[2]);\n  const result = x + y;\n  \n  return [{\n    json: {\n      chat_id: chatId,\n      success: true,\n      result: result,\n      original_text: messageText\n    }\n  }];\n} else {\n  // Extraction unsuccessful (E -- No)\n  return [{\n    json: {\n      chat_id: chatId,\n      success: false,\n      error_message: \"Error: Invalid format. Use \\\"Add: x + y\\\".\",\n      original_text: messageText\n    }\n  }];\n}"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "67245582-7d2d-42ac-9f44-839556811a0d",
+      "name": "IF: Extraction Successful (E)",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        370,
+        -55
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 1
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "0384814d-fa3d-4c3e-8f2e-06283b5f368d",
+              "operator": {
+                "type": "boolean",
+                "operation": "isTrue"
+              },
+              "leftValue": "={{$json.success}}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "cb17d83f-4eeb-4389-913a-4428bfe7b173",
+      "name": "Set: Format Result (H)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        590,
+        -150
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": [
+          {
+            "assignTo": "final_text",
+            "mode": "expression",
+            "type": "string",
+            "value": "={{ 'Result: ' + $json.result }}"
+          },
+          {
+            "assignTo": "chat_id",
+            "type": "expression",
+            "value": "={{$json.chat_id}}"
+          }
+        ]
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "4a0c8413-059a-4c2f-b413-568b202860a3",
+      "name": "Set: Format Error (F)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        590,
+        50
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": [
+          {
+            "assignTo": "final_text",
+            "mode": "expression",
+            "type": "string",
+            "value": "={{ $json.error_message }}"
+          },
+          {
+            "assignTo": "chat_id",
+            "type": "expression",
+            "value": "={{$json.chat_id}}"
+          }
+        ]
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "2da1150f-5fb0-45f8-9a4f-5612afffa27a",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        800,
+        -50
+      ],
+      "parameters": {
+        "mode": "combine",
+        "options": {},
+        "combineBy": "combineByPosition"
+      },
+      "typeVersion": 3.1
+    },
+    {
+      "id": "e89104c9-c1aa-42f1-aa5c-9c98cdb867c4",
+      "name": "Telegram: Send Response (I/F)",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        1000,
+        -50
+      ],
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.final_text}}",
+        "options": {},
+        "resource": "message",
+        "operation": "send"
+      },
+      "typeVersion": 1,
+      "credentials": {
+        "telegramApi": {
+          "id": "replace_with_telegram_credential_id",
+          "name": "Telegram Acct"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF: Message starts with 'Add: '",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Extract & Calculate": {
+      "main": [
+        [
+          {
+            "node": "IF: Extraction Successful (E)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Format Result (H)": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Format Error (F)": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Send Response (I/F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Message starts with 'Add: '": {
+      "main": [
+        [
+          {
+            "node": "Code: Extract & Calculate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Extraction Successful (E)": {
+      "main": [
+        [
+          {
+            "node": "Set: Format Result (H)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set: Format Error (F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

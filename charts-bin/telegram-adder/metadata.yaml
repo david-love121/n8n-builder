@@ -1,0 +1,38 @@
+automation_name: telegram-adder
+user_prompt: 'Create an automation that will wait for a telegram message beginning
+  with "Add: x + y" which will then add the two numbers and message the result back
+  on telegram. Example "Add: 2 + 5" "Result: 7" \n "Add:5+5" "Result: 10"'
+mermaid_code: "graph TD\n    A[Start Automation: Listen for Telegram Messages] -->\
+  \ B{Message received?}\n    B -- No --> A\n    B -- Yes --> C{Message starts with\
+  \ \"Add: \"}\n    C -- No --> A\n    C -- Yes --> D[\"Extract numbers x and y from\
+  \ 'Add: x + y'\"]\n    D --> E{Extraction successful?}\n    E -- No (Invalid format)\
+  \ --> F[\"Send Telegram Message: 'Error: Invalid format. Use \"Add: x + y\".'\"\
+  ]\n    E -- Yes --> G[\"Calculate Sum: result = x + y\"]\n    G --> H[\"Format Result\
+  \ Message: 'Result: result'\"]\n    H --> I[\"Send Telegram Message with Result\"\
+  ]\n    I --> A\n\n    style A fill:#4CAF50, color:#FFFFFF\n    style C fill:#FFA07A\n\
+  \    style E fill:#FFA07A\n    style G fill:#2196F3, color:#FFFFFF\n    style I\
+  \ fill:#4CAF50, color:#FFFFFF\n    style F fill:#F44336, color:#FFFFFF"
+description: "This flowchart visualizes the automation workflow.\n\n1.  **Start/Listen\
+  \ (A)**: The automation begins by continuously listening for new messages on Telegram.\n\
+  2.  **Message Received? (B)**: It waits until a message is received. If not, it\
+  \ keeps waiting.\n3.  **Check Prefix (C)**: If a message arrives, it checks if the\
+  \ message starts with the trigger phrase \"Add: \".\n4.  **Extract Numbers (D)**:\
+  \ If the prefix is correct, the automation attempts to parse the rest of the message\
+  \ to extract the two numbers ($x$ and $y$).\n5.  **Extraction Check (E)**: A decision\
+  \ point is reached to determine if the parsing successfully yielded two valid numbers.\n\
+  \    *   If **No** (the format is invalid, e.g., \"Add: five + three\"), an error\
+  \ message is sent back to the user **(F)**, and the automation returns to listening\
+  \ **(A)**.\n    *   If **Yes**, the flow proceeds to calculation **(G)**.\n6.  **Calculate\
+  \ Sum (G)**: The two extracted numbers ($x$ and $y$) are added together to find\
+  \ the `result`.\n7.  **Format Result (H)**: The `result` is formatted into the required\
+  \ output string, such as \"Result: 7\".\n8.  **Send Result (I)**: The formatted\
+  \ result is sent back to the user via Telegram.\n9.  **Loop (A)**: The automation\
+  \ then returns to the initial state to wait for the next message.\n\nThe configuration\
+  \ of external systems, such as the initial setup including the `mermaid.initialize()`\
+  \ call and setting appropriate security levels like `strict` (default) or `antiscript`\
+  \ for enabling potential click functionality, happens before this runtime flow,\
+  \ as detailed in the Mermaid documentation [docs.mermaidchart.com](https://docs.mermaidchart.com/mermaid-oss/intro/getting-started.html)\
+  \ and [docs.mermaidchart.com](https://docs.mermaidchart.com/mermaid-oss/config/usage.html).\
+  \ Configuration can also be set at the site level via the `initialize` call or through\
+  \ frontmatter within the diagram definition itself [docs.mermaidchart.com](https://docs.mermaidchart.com/mermaid-oss/config/configuration.html)."
+created_at: '2025-10-16T11:15:22'

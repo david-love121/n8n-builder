@@ -1,0 +1,1154 @@
+================
+CODE SNIPPETS
+================
+### Mermaid Flowchart Example
+
+Source: https://mermaid.js.org/intro/index
+
+This snippet demonstrates how to create a basic flowchart using Mermaid's syntax. It defines nodes and directional arrows to represent the flow of a process. This is useful for visualizing simple workflows.
+
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+
+```
+
+--------------------------------
+
+### Mermaid Flowchart Syntax Example
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Demonstrates the text-based syntax for creating flowcharts using Mermaid. This example visualizes a process with different nodes, connections, and styling. It includes nodes for start, input, decision, process, database, and success messages.
+
+```markdown
+```mermaid
+flowchart TB
+    Start([Start Process]) --> Input[/User Input/]
+    Input --> Validate{Valid?}
+    Validate -->|No| Error[Display Error]
+    Error --> Input
+    Validate -->|Yes| Process[Process Data]
+    Process --> Database[(Save to DB)]
+    Database --> Success[/Success Message/]
+    Success --> End([End])
+
+    style Start fill:#90EE90
+    style End fill:#FFB6C1
+    style Error fill:#FF6B6B
+    style Success fill:#4ECDC4
+```
+```
+
+--------------------------------
+
+### Mermaid Flowchart with Frontmatter Configuration
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Configure diagram appearance and behavior using YAML frontmatter before defining a flowchart with Mermaid JS. This allows for customization of themes, colors, and layout. The example shows a simple flowchart with load balancing.
+
+```mermaid
+---
+title: Database Architecture
+displayMode: compact
+config:
+  theme: dark
+  themeVariables:
+    primaryColor: "#1e3a8a"
+    primaryTextColor: "#fff"
+    primaryBorderColor: "#3b82f6"
+    lineColor: "#60a5fa"
+  flowchart:
+    curve: "cardinal"
+    padding: 20
+    nodeSpacing: 100
+    rankSpacing: 100
+---
+flowchart LR
+    Client[Client App] -->|HTTPS| LB[Load Balancer]
+    LB -->|HTTP| App1[App Server 1]
+    LB -->|HTTP| App2[App Server 2]
+    App1 & App2 -->|SQL| Primary[(Primary DB)]
+    Primary -.->|Replication| Replica1[(Replica 1)]
+    Primary -.->|Replication| Replica2[(Replica 2)]
+    App1 & App2 -->|Cache| Redis[(Redis Cache)]
+```
+
+--------------------------------
+
+### Markdown with Embedded Mermaid Flowchart and Sequence Diagram
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Shows how to integrate Mermaid diagrams directly within Markdown files. It includes examples of a `graph TD` flowchart illustrating microservices architecture and a `sequenceDiagram` depicting a deployment process, commonly supported by platforms like GitHub and GitLab.
+
+```markdown
+# Project Architecture
+
+Our microservices architecture consists of the following components:
+
+```mermaid
+graph TB
+    subgraph "Frontend"
+        Web[Web App]
+        Mobile[Mobile App]
+    end
+
+    subgraph "API Layer"
+        Gateway[API Gateway]
+        Auth[Auth Service]
+    end
+
+    subgraph "Services"
+        User[User Service]
+        Order[Order Service]
+        Payment[Payment Service]
+        Notification[Notification Service]
+    end
+
+    subgraph "Data Layer"
+        UserDB[(User DB)]
+        OrderDB[(Order DB)]
+        Cache[(Redis)]
+        Queue[Message Queue]
+    end
+
+    Web --> Gateway
+    Mobile --> Gateway
+    Gateway --> Auth
+    Gateway --> User
+    Gateway --> Order
+    Gateway --> Payment
+
+    User --> UserDB
+    Order --> OrderDB
+    Payment --> Queue
+    Queue --> Notification
+
+    User --> Cache
+    Order --> Cache
+```
+
+## Deployment Process
+
+```mermaid
+sequenceDiagram
+    Developer->>GitHub: Push code
+    GitHub->>CI: Trigger workflow
+    CI->>CI: Run tests
+    CI->>CI: Build image
+    CI->>Registry: Push Docker image
+    CI->>Kubernetes: Deploy to staging
+    QA->>Staging: Verify deployment
+    QA->>CI: Approve production
+    CI->>Kubernetes: Deploy to production
+    Kubernetes->>Monitoring: Send metrics
+```
+```
+
+--------------------------------
+
+### Mermaid Diagram Syntax Example
+
+Source: https://mermaid.js.org/intro/getting-started
+
+This snippet demonstrates the basic syntax for creating a flowchart using Mermaid. It defines nodes and their connections, showing how to represent a simple workflow. This code can be used directly in the Mermaid Live Editor or any environment that supports Mermaid.
+
+```mermaid
+graph TD
+    A[Enter Chart Definition] --> B(Preview)
+    B --> C{decide}
+    C --> D[Keep]
+    C --> E[Edit Definition]
+    E --> B
+    D --> F[Save Image and Code]
+    F --> B
+```
+
+--------------------------------
+
+### Mermaid: Set ELK Layout, Hand-Drawn Look, and Dark Theme
+
+Source: https://mermaid.js.org/intro/syntax-reference
+
+This example shows how to configure a Mermaid diagram to use the 'elk' layout algorithm, the 'handDrawn' look, and a 'dark' theme. It illustrates a basic flowchart structure. This setup is achieved by specifying parameters within the `config` block of the diagram's metadata.
+
+```mermaid
+--- 
+config: 
+  layout: elk 
+  look: handDrawn 
+  theme: dark 
+---
+flowchart TB
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Continue]
+  B -->|No| D[Stop]
+
+```
+
+--------------------------------
+
+### Mermaid: Set Hand-Drawn Look and Neutral Theme
+
+Source: https://mermaid.js.org/intro/syntax-reference
+
+This code snippet demonstrates how to configure a Mermaid diagram to use the 'handDrawn' look and a 'neutral' theme. It defines a simple flowchart with a start, decision, and end points. This configuration is applied within the `config` section of the diagram's metadata.
+
+```mermaid
+--- 
+config: 
+  look: handDrawn 
+  theme: neutral 
+---
+flowchart LR
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Continue]
+  B -->|No| D[Stop]
+
+```
+
+--------------------------------
+
+### Mermaid: Customize ELK Layout with Merged Edges and Node Placement
+
+Source: https://mermaid.js.org/intro/syntax-reference
+
+This snippet configures a Mermaid diagram to use the 'elk' layout algorithm with specific customizations: merging parallel edges and setting a node placement strategy. It includes an example flowchart. The ELK-specific options are nested under the `elk` key within the `config` section.
+
+```mermaid
+---
+config:
+  layout: elk
+  elk:
+    mergeEdges: true
+    nodePlacementStrategy: LINEAR_SEGMENTS
+---
+flowchart LR
+  A[Start] --> B{Choose Path}
+  B -->|Option 1| C[Path 1]
+  B -->|Option 2| D[Path 2]
+
+```
+
+--------------------------------
+
+### Mermaid: Use Dagre Layout with Classic Look and Default Theme
+
+Source: https://mermaid.js.org/intro/syntax-reference
+
+This example configures a Mermaid diagram to use the 'dagre' layout algorithm, the 'classic' look, and the 'default' theme. It defines a simple flowchart structure. These settings are applied via the `config` block in the diagram's metadata.
+
+```mermaid
+---
+config:
+  layout: dagre
+  look: classic
+  theme: default
+---
+
+flowchart LR
+A[Start] --> B{Choose Path}
+B -->|Option 1| C[Path 1]
+B -->|Option 2| D[Path 2]
+
+```
+
+--------------------------------
+
+### HTML with Mermaid Diagrams and CDN Initialization
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Demonstrates embedding Mermaid diagrams within HTML using predefined CSS classes and initializing Mermaid via a CDN script. It showcases different diagram types (flowchart, state diagram) with distinct themes and layout algorithms (ELK, Dagre).
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <!-- Hand-drawn style with ELK layout -->
+  <pre class="mermaid">
+---
+config:
+  look: handDrawn
+  theme: neutral
+  layout: elk
+  elk:
+    mergeEdges: true
+    nodePlacementStrategy: BRANDES_KOEPF
+---
+flowchart TB
+    Start[Start Process] --> Decision{Check Status}
+    Decision -->|Active| ProcessA[Process Type A]
+    Decision -->|Inactive| ProcessB[Process Type B]
+    ProcessA --> Merge[Merge Results]
+    ProcessB --> Merge
+    Merge --> End[Complete]
+  </pre>
+
+  <!-- Classic style with Dagre layout -->
+  <pre class="mermaid">
+---
+config:
+  look: classic
+  theme: forest
+  layout: dagre
+---
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Processing: start()
+    Processing --> Success: complete()
+    Processing --> Error: fail()
+    Success --> [*]
+    Error --> Retry: retry()
+    Retry --> Processing
+    Error --> [*]: abort()
+  </pre>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      logLevel: 'info'
+    });
+  </script>
+</body>
+</html>
+```
+
+--------------------------------
+
+### Mermaid Programmatic Rendering with JavaScript
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Shows how to use Mermaid.js within a JavaScript application after installing it via npm. This example demonstrates initializing Mermaid with custom configurations and dynamically rendering a flowchart SVG into a specified DOM element. It utilizes the `mermaid.render()` function.
+
+```javascript
+// app.js - Using Mermaid in a Node.js/bundled application
+import mermaid from 'mermaid';
+
+// Initialize with custom configuration
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'forest',
+  securityLevel: 'loose',
+  themeVariables: {
+    primaryColor: '#4a90e2',
+    primaryTextColor: '#fff',
+    primaryBorderColor: '#2e5c8a',
+    lineColor: '#F8B229',
+    secondaryColor: '#006100',
+    tertiaryColor: '#fff'
+  },
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true,
+    curve: 'basis'
+  }
+});
+
+// Dynamically render a diagram
+const diagramDefinition = "
+  graph LR
+    A[Square Rect] --> B((Circle))
+    A --> C(Rounded Rect)
+    B --> D{Decision}
+    C --> D
+";
+
+const container = document.getElementById('diagram-container');
+const { svg } = await mermaid.render('diagram-id', diagramDefinition);
+container.innerHTML = svg;
+```
+
+--------------------------------
+
+### Mermaid XY Chart Example
+
+Source: https://mermaid.js.org/intro/index
+
+This snippet demonstrates how to create an XY chart using Mermaid's syntax. It defines the chart title, x-axis labels, y-axis scale, and data for both bars and lines. This is useful for visualizing time-series data or comparisons.
+
+```mermaid
+xychart-beta
+    title "Sales Revenue"
+    x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+    y-axis "Revenue (in $)" 4000 --> 11000
+    bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+    line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+```
+
+--------------------------------
+
+### Mermaid Gantt Chart Syntax
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Plan and visualize project timelines, milestones, and task dependencies using Mermaid's Gantt chart syntax. This is useful for project management and tracking progress. It allows defining sections, tasks, and their durations.
+
+```mermaid
+gantt
+    title Software Development Timeline
+    dateFormat YYYY-MM-DD
+
+    section Planning
+    Requirements Gathering    :done, req, 2024-01-01, 2024-01-15
+    System Design            :done, design, after req, 10d
+
+    section Development
+    Backend API              :active, backend, 2024-01-26, 30d
+    Database Schema          :done, db, 2024-01-26, 15d
+    Frontend UI              :frontend, after db, 25d
+    Integration              :integration, after backend frontend, 10d
+
+    section Testing
+    Unit Tests               :testing, after integration, 7d
+    Integration Tests        :after testing, 5d
+    UAT                      :milestone, after testing, 0d
+
+    section Deployment
+    Staging Deploy           :staging, after testing, 2d
+    Production Deploy        :milestone, prod, after staging, 0d
+```
+
+--------------------------------
+
+### Mermaid Git Graph Example
+
+Source: https://mermaid.js.org/intro/index
+
+This snippet illustrates how to visualize a Git repository's history using Mermaid's Git graph syntax. It shows commits, branches, and checkouts. This is useful for understanding and communicating the branching strategy and commit history of a project.
+
+```mermaid
+gitGraph
+   commit
+   commit
+   branch develop
+   commit
+   commit
+   commit
+   checkout main
+   commit
+   commit
+
+```
+
+--------------------------------
+
+### Mermaid User Journey Diagram Example
+
+Source: https://mermaid.js.org/intro/index
+
+This snippet demonstrates the creation of a User Journey diagram with Mermaid. It outlines the steps a user takes, associating actions with participants and time. User journey diagrams help visualize user experience and flow.
+
+```mermaid
+journey
+    title My working day
+    section Go to work
+      Make tea: 5: Me
+      Go upstairs: 3: Me
+      Do work: 1: Me, Cat
+    section Go home
+      Go downstairs: 5: Me
+      Sit down: 5: Me
+
+```
+
+--------------------------------
+
+### Mermaid Git Graph Syntax
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Visualize git branching strategies and commit workflows using Mermaid's git graph syntax. This helps in understanding the history and structure of a Git repository. It supports commits, branches, merges, and tags.
+
+```mermaid
+gitGraph
+    commit id: "Initial commit"
+    commit id: "Add README"
+
+    branch develop
+    checkout develop
+    commit id: "Setup project structure"
+    commit id: "Add database models"
+
+    branch feature/auth
+    checkout feature/auth
+    commit id: "Implement login"
+    commit id: "Add JWT tokens"
+    commit id: "Write auth tests"
+
+    checkout develop
+    merge feature/auth tag: "v0.1.0"
+
+    branch feature/api
+    checkout feature/api
+    commit id: "Create REST endpoints"
+    commit id: "Add validation"
+
+    checkout develop
+    commit id: "Update dependencies"
+    merge feature/api
+
+    checkout main
+    merge develop tag: "v1.0.0"
+
+    checkout develop
+    commit id: "Start v1.1 features"
+```
+
+--------------------------------
+
+### Mermaid Sequence Diagram Example
+
+Source: https://mermaid.js.org/intro/index
+
+This example illustrates the creation of a sequence diagram using Mermaid. It defines participants and their interactions over time, including loops and notes. Sequence diagrams are ideal for showing interactions between objects or components.
+
+```mermaid
+sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>John: Hello John, how are you?
+    loop HealthCheck
+        John->>John: Fight against hypochondria
+    end
+    Note right of John: Rational thoughts <br/>prevail!
+    John-->>Alice: Great!
+    John->>Bob: How about you?
+    Bob-->>John: Jolly good!
+
+```
+
+--------------------------------
+
+### Mermaid Quadrant Chart Example
+
+Source: https://mermaid.js.org/intro/index
+
+This example shows how to create a Quadrant Chart using Mermaid. It defines axes, quadrant names, and data points for different campaigns, categorized by reach and engagement. Quadrant charts are useful for strategic analysis and decision-making.
+
+```mermaid
+quadrantChart
+    title Reach and engagement of campaigns
+    x-axis Low Reach --> High Reach
+    y-axis Low Engagement --> High Engagement
+    quadrant-1 We should expand
+    quadrant-2 Need to promote
+    quadrant-3 Re-evaluate
+    quadrant-4 May be improved
+    Campaign A: [0.3, 0.6]
+    Campaign B: [0.45, 0.23]
+    Campaign C: [0.57, 0.69]
+    Campaign D: [0.78, 0.34]
+    Campaign E: [0.40, 0.34]
+    Campaign F: [0.35, 0.78]
+
+```
+
+--------------------------------
+
+### Mermaid Gantt Chart Example
+
+Source: https://mermaid.js.org/intro/index
+
+This snippet shows how to define a Gantt chart with Mermaid. It includes date formatting, a title, exclusion of weekdays, and task definitions with statuses and durations. Gantt charts are used for project scheduling and visualizing task timelines.
+
+```mermaid
+gantt
+dateFormat  YYYY-MM-DD
+title Adding GANTT diagram to mermaid
+excludes weekdays 2014-01-10
+
+section A section
+Completed task            :done,    des1, 2014-01-06,2014-01-08
+Active task               :active,  des2, 2014-01-09, 3d
+Future task               :         des3, after des2, 5d
+Future task2               :         des4, after des3, 5d
+
+```
+
+--------------------------------
+
+### Mermaid ER Diagram Syntax Example
+
+Source: https://mermaid.js.org/intro/syntax-reference
+
+This code snippet demonstrates the syntax for creating an Entity Relationship Diagram (ER Diagram) using Mermaid. It defines entities and their relationships, specifying cardinality and labels.
+
+```mermaid
+erDiagram
+          CUSTOMER }|..|{ DELIVERY-ADDRESS : has
+          CUSTOMER ||--o{ ORDER : places
+          CUSTOMER ||--o{ INVOICE : "liable for"
+          DELIVERY-ADDRESS ||--o{ ORDER : receives
+          INVOICE ||--|{ ORDER : covers
+          ORDER ||--|{ ORDER-ITEM : includes
+          PRODUCT-CATEGORY ||--|{ PRODUCT : contains
+          PRODUCT ||--o{ ORDER-ITEM : "ordered in"
+```
+
+--------------------------------
+
+### Mermaid Gantt Chart with Frontmatter Configuration
+
+Source: https://mermaid.js.org/intro/syntax-reference
+
+This example shows how to configure a Mermaid Gantt chart using frontmatter. The frontmatter section, delimited by '---', allows for setting a title, display mode, theme, and specific Gantt chart properties before the main diagram definition.
+
+```mermaid
+---
+title: Frontmatter Example
+displayMode: compact
+config:
+  theme: forest
+gantt:
+  useWidth: 400
+  compact: true
+---
+gantt
+    section Waffle
+        Iron  : 1982, 3y
+        House : 1986, 3y
+```
+
+--------------------------------
+
+### Mermaid.render() for Dynamic SVG Generation
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Illustrates programmatic diagram generation using `mermaid.render()`. This function takes a diagram definition and an element ID to render the SVG. It includes error handling and demonstrates binding interactive functions to the generated SVG. This is useful for dynamic content or server-side rendering.
+
+```javascript
+import mermaid from 'mermaid';
+
+async function generateDiagram(definition, elementId) {
+  try {
+    // Configure before rendering
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      logLevel: 'error'
+    });
+
+    // Render the diagram
+    const { svg, bindFunctions } = await mermaid.render(elementId, definition);
+
+    // Insert into DOM
+    const element = document.getElementById('output');
+    element.innerHTML = svg;
+
+    // Bind interactive functions if needed
+    if (bindFunctions) {
+      bindFunctions(element);
+    }
+
+    return svg;
+  } catch (error) {
+    console.error('Diagram rendering failed:', error);
+    throw error;
+  }
+}
+
+// Example: Generate a class diagram
+const classDiagram = "
+  classDiagram
+    class Animal {
+      +String name
+      +int age
+      +makeSound() void
+    }
+    class Dog {
+      +String breed
+      +bark() void
+    }
+    class Cat {
+      +String color
+      +meow() void
+    }
+    Animal <|-- Dog
+    Animal <|-- Cat
+";
+
+generateDiagram(classDiagram, 'class-diagram-1')
+  .then(svg => console.log('Diagram generated successfully'))
+  .catch(err => console.error('Failed to generate:', err));
+```
+
+--------------------------------
+
+### Mermaid Sequence Diagram Syntax
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Document interactions between components, API calls, and message flows using Mermaid's sequence diagram syntax. This syntax is useful for visualizing communication patterns in a system. It supports participants, messages, and notes.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as API Gateway
+    participant Auth as Auth Service
+    participant DB as Database
+    participant Cache as Redis Cache
+
+    C->>+API: POST /api/login
+    API->>+Auth: validateCredentials(email, password)
+    Auth->>+DB: SELECT * FROM users WHERE email=?
+    DB-->>-Auth: userData
+
+    alt User Found
+        Auth->>Auth: comparePassword()
+        Auth->>+Cache: SET session:token
+        Cache-->>-Auth: OK
+        Auth-->>-API: {token, user}
+        API-->>-C: 200 OK {token}
+    else User Not Found
+        Auth-->>API: Unauthorized
+        API-->>C: 401 Unauthorized
+    end
+
+    Note over C,DB: Session expires after 24 hours
+```
+
+--------------------------------
+
+### Mermaid Entity Relationship Diagram Example
+
+Source: https://mermaid.js.org/intro/index
+
+This example shows how to create an Entity Relationship Diagram (ERD) using Mermaid. It defines entities and their relationships (one-to-one, one-to-many, etc.). ERDs are crucial for database design and understanding data structures.
+
+```mermaid
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE-ITEM : contains
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+
+```
+
+--------------------------------
+
+### Mermaid Class Diagram Example
+
+Source: https://mermaid.js.org/intro/index
+
+This example demonstrates creating a class diagram with Mermaid. It shows class inheritance, composition, aggregation, associations, and class members. Class diagrams are fundamental in object-oriented design to model the structure of a system.
+
+```mermaid
+classDiagram
+Class01 <|-- AveryLongClass : Cool
+Class03 *-- Class04
+Class05 o-- Class06
+Class07 .. Class08
+Class09 --> C2 : Where am i?
+Class09 --* C3
+Class09 --|> Class07
+Class07 : equals()
+Class07 : Object[] elementData
+Class01 : size()
+Class01 : int chimp
+Class01 : int gorilla
+Class08 <--> C2: Cool label
+
+```
+
+--------------------------------
+
+### Embedding Mermaid in Markdown
+
+Source: https://mermaid.js.org/intro/getting-started
+
+This example shows how to embed a Mermaid diagram within a markdown code block. Most platforms that support markdown, such as GitHub and GitLab, will render these blocks as interactive diagrams. It's a straightforward way to include diagrams in documentation.
+
+```markdown
+```mermaid
+flowchart LR
+  A --> B
+```
+```
+
+--------------------------------
+
+### Multiple Mermaid Diagrams with CDN Initialization
+
+Source: https://mermaid.js.org/intro/getting-started
+
+Illustrates embedding multiple Mermaid diagrams on a single page and initializing them using a CDN link and `mermaid.initialize({ startOnLoad: true })`. This ensures all diagrams are rendered when the page loads.
+
+```html
+<html>
+  <body>
+    Here is one mermaid diagram:
+    <pre class="mermaid">
+            graph TD
+            A[Client] --> B[Load Balancer]
+            B --> C[Server1]
+            B --> D[Server2]
+    </pre>
+
+    And here is another:
+    <pre class="mermaid">
+            graph TD
+            A[Client] -->|tcp_123| B
+            B(Load Balancer)
+            B -->|tcp_456| C[Server1]
+            B -->|tcp_456| D[Server2]
+    </pre>
+
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+  </body>
+</html>
+```
+
+--------------------------------
+
+### Mermaid Entity Relationship Diagram Syntax
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Model database schemas and relationships between entities using Mermaid's ER diagram syntax. This is ideal for database design and documentation. It supports defining entities, their attributes, and relationships.
+
+```mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    USER {
+        int id PK
+        string email UK
+        string password
+        string first_name
+        string last_name
+        datetime created_at
+    }
+
+    ORDER ||--|{ ORDER_ITEM : contains
+    ORDER {
+        int id PK
+        int user_id FK
+        decimal total_amount
+        string status
+        datetime order_date
+    }
+
+    PRODUCT ||--o{ ORDER_ITEM : "ordered in"
+    PRODUCT {
+        int id PK
+        string name
+        string sku UK
+        decimal price
+        int stock_quantity
+        int category_id FK
+    }
+
+    ORDER_ITEM {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int quantity
+        decimal unit_price
+    }
+
+    CATEGORY ||--|{ PRODUCT : contains
+    CATEGORY {
+        int id PK
+        string name
+        string slug UK
+    }
+
+    USER ||--o{ REVIEW : writes
+    PRODUCT ||--o{ REVIEW : receives
+    REVIEW {
+        int id PK
+        int user_id FK
+        int product_id FK
+        int rating
+        text comment
+    }
+```
+
+--------------------------------
+
+### Embed Mermaid Diagram in HTML
+
+Source: https://mermaid.js.org/intro/getting-started
+
+Shows how to embed a Mermaid diagram definition directly within HTML using a `<pre class="mermaid">` tag. This method is straightforward for static content.
+
+```html
+<body>
+  Here is a mermaid diagram:
+  <pre class="mermaid">
+        graph TD
+        A[Client] --> B[Load Balancer]
+        B --> C[Server01]
+        B --> D[Server02]
+  </pre>
+</body>
+```
+
+--------------------------------
+
+### Mermaid JavaScript API HTML Structure
+
+Source: https://mermaid.js.org/intro/getting-started
+
+This HTML snippet illustrates how to integrate the Mermaid JavaScript API into a web page. It includes the necessary script tags to load the Mermaid library and a call to `mermaid.initialize()` to configure and render diagrams. The Mermaid diagram code itself would be placed within the HTML body.
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+
+<script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.js";
+    mermaid.initialize({ startOnLoad: true });
+</script>
+
+<div class="mermaid">
+    graph TD
+        A[Render with JS API] --> B(Done)
+</div>
+
+```
+
+--------------------------------
+
+### Initialize Mermaid with CDN and startOnLoad
+
+Source: https://mermaid.js.org/intro/getting-started
+
+Demonstrates initializing Mermaid diagrams loaded from a CDN using `mermaid.initialize({ startOnLoad: true })`. This automatically renders all detected Mermaid diagrams on page load.
+
+```javascript
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true });
+```
+
+--------------------------------
+
+### Mermaid CDN Integration Example
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Demonstrates how to load and use Mermaid.js directly from a CDN in an HTML file. This method is suitable for simple integrations without a build process. It shows how to embed Mermaid definitions within `<pre class='mermaid'>` tags and initialize Mermaid using JavaScript.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mermaid CDN Example</title>
+</head>
+<body>
+  <h1>Network Architecture</h1>
+  <pre class="mermaid">
+    graph TD
+      A[Client] --> B[Load Balancer]
+      B --> C[Server01]
+      B --> D[Server02]
+      C --> E[(Database)]
+      D --> E
+  </pre>
+
+  <h2>User Authentication Flow</h2>
+  <pre class="mermaid">
+    sequenceDiagram
+      participant User
+      participant App
+      participant Auth
+      participant DB
+
+      User->>App: Login Request
+      App->>Auth: Validate Credentials
+      Auth->>DB: Query User
+      DB-->>Auth: User Data
+      Auth-->>App: JWT Token
+      App-->>User: Login Success
+  </pre>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+  </script>
+</body>
+</html>
+```
+
+--------------------------------
+
+### Mermaid Initialization via CDN in HTML
+
+Source: https://mermaid.js.org/intro/index
+
+This HTML snippet shows how to initialize Mermaid.js directly in an HTML file using a CDN link. It imports the Mermaid library and calls `mermaid.initialize` to enable automatic rendering of diagrams defined in `<pre>` or `<div>` tags with the class 'mermaid'.
+
+```html
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+```
+
+--------------------------------
+
+### Mermaid with Local Script Initialization
+
+Source: https://mermaid.js.org/intro/getting-started
+
+Shows how to integrate Mermaid by referencing a local script file and initializing it with `mermaid.initialize({ startOnLoad: true })`. This provides more control over the Mermaid library loading process.
+
+```html
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <pre class="mermaid">
+            graph LR
+            A --- B
+            B-->C[fa:fa-ban forbidden]
+            B-->D(fa:fa-spinner);
+    </pre>
+    <pre class="mermaid">
+            graph TD
+            A[Client] --> B[Load Balancer]
+            B --> C[Server1]
+            B --> D[Server2]
+    </pre>
+    <script type="module">
+      import mermaid from 'The/Path/In/Your/Package/mermaid.esm.mjs';
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+  </body>
+</html>
+```
+
+--------------------------------
+
+### Mermaid Development Installation (Bash)
+
+Source: https://mermaid.js.org/intro/index
+
+This bash script outlines the steps to clone the Mermaid repository and install its dependencies using pnpm. It's intended for developers who want to contribute to the Mermaid.js project. It includes cloning the repo, navigating into the directory, installing dependencies, and running tests.
+
+```bash
+git clone git@github.com:mermaid-js/mermaid.git
+cd mermaid
+# npx is required for first install as volta support for pnpm is not added yet.
+npx pnpm install
+pnpm test
+```
+
+--------------------------------
+
+### JavaScript Mermaid Security Level Configuration
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Illustrates configuring Mermaid's security levels in JavaScript for different scenarios, from strict XSS prevention to enabling interactive features and using sandbox mode for maximum isolation. It shows initialization options for `strict`, `loose`, and `sandbox` security.
+
+```javascript
+import mermaid from 'mermaid';
+
+// Strict security for user-generated content
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'strict', // Prevents JavaScript execution
+  theme: 'default'
+});
+
+// For trusted content with interactive features
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'loose', // Allows click events and links
+  flowchart: {
+    htmlLabels: true
+  }
+});
+
+// Sandbox mode - renders in isolated iframe
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: 'sandbox', // Maximum security
+  theme: 'default'
+});
+
+// Example with clickable nodes (requires loose security)
+const interactiveDiagram = `
+  graph TD
+    A[Home Page] --> B[Products]
+    A --> C[About]
+    B --> D[Product Details]
+
+    click A "https://example.com" "Go to Home"
+    click B "https://example.com/products" "View Products"
+    click C "https://example.com/about" "About Us"
+`;
+
+document.getElementById('diagram').innerHTML =
+  await mermaid.render('interactive', interactiveDiagram);
+```
+
+--------------------------------
+
+### Mermaid Linting Command (Shell)
+
+Source: https://mermaid.js.org/intro/index
+
+This command utilizes the pnpm package manager to run the linting process for the Mermaid.js project. Linting helps ensure code quality and consistency across the codebase. It's a crucial step in the development workflow.
+
+```sh
+pnpm lint
+```
+
+--------------------------------
+
+### Mermaid NPM Package Installation
+
+Source: https://context7.com/context7/mermaid_js/llms.txt
+
+Provides commands to install the Mermaid.js library using package managers like npm, yarn, or pnpm. This is the recommended method for integrating Mermaid into bundled applications.
+
+```bash
+# Install via npm
+npm install mermaid
+
+# Or via yarn
+yarn add mermaid
+
+# Or via pnpm
+pnpm add mermaid
+```
+
+--------------------------------
+
+### Mermaid Testing Command (Shell)
+
+Source: https://mermaid.js.org/intro/index
+
+This command executes the test suite for the Mermaid.js project using pnpm. Running tests is essential to verify the functionality and stability of the library. It helps catch regressions and ensure new features work as expected.
+
+```sh
+pnpm test
+```
+
+--------------------------------
+
+### Mermaid NPM Publish Command (Shell)
+
+Source: https://mermaid.js.org/intro/index
+
+This shell command is used by maintainers with the necessary permissions to publish a new version of the Mermaid.js library to the npm registry. It typically involves updating the version number in `package.json` and then executing this command to generate distribution files and upload them.
+
+```sh
+npm publish
+```

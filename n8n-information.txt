@@ -1,0 +1,1422 @@
+# n8n Documentation Project
+
+n8n is a fair-code licensed workflow automation platform that combines AI capabilities with business process automation. This documentation repository hosts comprehensive guides, API references, and integration documentation for n8n, covering everything from basic setup to advanced development. Built with MkDocs Material theme and Python-based custom macros, it provides an extensive resource for users ranging from no-code beginners to experienced developers building custom integrations.
+
+## Example workflows: Title followed by example of json. You should use this as an example for your own formatting.
+Title: Chat with a database using AI
+{
+  "meta": {
+    "instanceId": "408f9fb9940c3cb18ffdef0e0150fe342d6e655c3a9fac21f0f644e8bedabcd9",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "d08a2559-17fd-4bdb-a976-795c3823a88a",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -520,
+        240
+      ],
+      "parameters": {
+        "content": "## Try me out\nClick the 'chat' button at the bottom of the canvas and paste in:\n\n_Which tables are available?_"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3019b559-6100-4ead-8e1a-a7dece2a6982",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -380,
+        -60
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 677,
+        "height": 505,
+        "content": "This workflow uses a Postgres DB, but you could swap it for a MySQL or SQLite one"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "73786411-5383-4921-82ee-06b3b582bab7",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [
+        -320,
+        40
+      ],
+      "webhookId": "1c0d08f0-abd0-4bdc-beef-370c27aae1a0",
+      "parameters": {
+        "options": {}
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "e65a1558-e0c0-4c4a-a306-90dc6dcb618a",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgresTool",
+      "position": [
+        140,
+        260
+      ],
+      "parameters": {
+        "query": "{{ $fromAI('sql_statement') }}",
+        "options": {},
+        "operation": "executeQuery"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "elRn5sxKOfCdlEs6",
+          "name": "Postgres account"
+        }
+      },
+      "typeVersion": 2.5
+    },
+    {
+      "id": "9df537e7-3ca2-4e72-bc85-ae0d944fbdd1",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        0,
+        260
+      ],
+      "parameters": {},
+      "typeVersion": 1.3
+    },
+    {
+      "id": "57b2b959-9f25-475f-b6bb-842139725411",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -100,
+        40
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "typeVersion": 1.8
+    },
+    {
+      "id": "f21ac2dc-56ff-4ea6-a29e-168e7dfaf3fa",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -160,
+        260
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "8gccIjcuf3gvaoEr",
+          "name": "OpenAi account"
+        }
+      },
+      "typeVersion": 1.2
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+
+Title: email Spam filtering discord bot
+{
+  "meta": {
+    "instanceId": "52254486b159b349334953c1738da94e90477c7604aa8db2062d11afc0120739",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "7fe486a9-4155-46b0-919d-9415294d933b",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        -220,
+        1560
+      ],
+      "parameters": {
+        "simple": false,
+        "filters": {},
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "AQzIuqLFQrHetxAU",
+          "name": "Gmail"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "2a7c6a45-1f8e-4e24-bc6d-46ae2f615157",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        1480
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 460,
+        "height": 280,
+        "content": "## account1@gmail.com\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "4029c86a-0a6e-4778-8f18-3938c01bbac3",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        1780
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 460,
+        "height": 280,
+        "content": "## account2@gmail.com\n\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "44cab983-4b76-4d2b-85ba-7f2afd2b9751",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        2340
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 460,
+        "height": 240,
+        "content": "## account4@gmail.com\n\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3f6baa23-ade2-47e3-98ab-84495358ffac",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        2080
+      ],
+      "parameters": {
+        "color": 3,
+        "width": 460,
+        "height": 240,
+        "content": "## account3@gmail.com\n\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "58d2a3eb-cff8-49cb-9fa7-c8585007fe81",
+      "name": "Gmail Trigger1",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        -200,
+        1860
+      ],
+      "parameters": {
+        "simple": false,
+        "filters": {},
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uBHPq20pQrKQQ392",
+          "name": "Gmail - account2@gmail.com"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "d04aabfe-27f2-43b7-8248-30c8792a1b9e",
+      "name": "Gmail Trigger2",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        -200,
+        2400
+      ],
+      "parameters": {
+        "simple": false,
+        "filters": {},
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ryt2BPCFeLUoWi5s",
+          "name": "Gmail - account3@gmail.com"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "e712e083-bad9-43bc-ba5d-a8d4444eb840",
+      "name": "Gmail Trigger3",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        -200,
+        2140
+      ],
+      "parameters": {
+        "simple": false,
+        "filters": {},
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ryt2BPCFeLUoWi5s",
+          "name": "Gmail - account3@gmail.com"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "26c242d1-6bdf-4f0b-9beb-96172766260c",
+      "name": "Merge4",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        380,
+        1600
+      ],
+      "parameters": {
+        "mode": "combine",
+        "options": {},
+        "combineBy": "combineByPosition"
+      },
+      "typeVersion": 3.1
+    },
+    {
+      "id": "a507c42c-48cf-4576-b1c9-0358e51ca7e0",
+      "name": "medium4",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        0,
+        2140
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d582588-255e-4113-9811-3046c8f9861c",
+              "name": "discord_channel",
+              "type": "string",
+              "value": "=1234567891"
+            },
+            {
+              "id": "f69cbf07-eb5c-4987-bdb1-bc7e851ac68b",
+              "name": "email",
+              "type": "string",
+              "value": "account3@gmail.com"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "ebf4ec42-b490-4fde-9905-b6020383f553",
+      "name": "medium5",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        0,
+        2400
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d582588-255e-4113-9811-3046c8f9861c",
+              "name": "discord_channel",
+              "type": "string",
+              "value": "=1234567892"
+            },
+            {
+              "id": "f69cbf07-eb5c-4987-bdb1-bc7e851ac68b",
+              "name": "email",
+              "type": "string",
+              "value": "account4@gmail.com"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "2ffcbca0-e8da-412a-bda8-c2f2fe203c6d",
+      "name": "medium6",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -20,
+        1860
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d582588-255e-4113-9811-3046c8f9861c",
+              "name": "discord_channel",
+              "type": "string",
+              "value": "=1234567893"
+            },
+            {
+              "id": "f69cbf07-eb5c-4987-bdb1-bc7e851ac68b",
+              "name": "email",
+              "type": "string",
+              "value": "account2@gmail.com"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "af0cf074-5659-4436-82b1-2feaf856b132",
+      "name": "medium7",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -20,
+        1560
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d582588-255e-4113-9811-3046c8f9861c",
+              "name": "discord_channel",
+              "type": "string",
+              "value": "=1234567894"
+            },
+            {
+              "id": "f69cbf07-eb5c-4987-bdb1-bc7e851ac68b",
+              "name": "email",
+              "type": "string",
+              "value": "account1@gmail.com"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "d0f33ea4-9c96-49b5-900e-d279ca19763a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        360,
+        2160
+      ],
+      "webhookId": "347b7767-7df7-4e61-9daf-2edbc04e2d9b",
+      "parameters": {
+        "path": "email-feedback",
+        "options": {},
+        "httpMethod": "POST"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "06487c07-2f5f-47f4-80c2-4dcd3c6ae232",
+      "name": "AI Agent1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        580,
+        2160
+      ],
+      "parameters": {
+        "text": "=User Input : {{ $('Webhook').item.json.body.content.text }}\n\nReference discord message: {{ JSON.stringify($json.body.original_message.reference) }}",
+        "options": {
+          "systemMessage": "You are an AI agent running inside an n8n workflow.\nYou have three tools available:\n• getDiscordMessage(reference) – retrieves a Discord message when given a valid reference object\n• getSpamList() – retrieves the current list of spam emails and domains from Google Sheets\n• updateSpamList(columns) – appends or updates a row in the “Email spam list” sheet with the given columns\n\nBehavior:\n\nIf the user’s input indicates they want to classify an email (e.g. “spam” or “legit”):\na. If a valid reference object is provided, invoke getDiscordMessage(reference).\nb. Invoke getSpamList().\nc. Determine sender_email and domain from the retrieved message.\nd. Compare against the spam list to decide “spam” or “legit.”\ne. Invoke updateSpamList({email: sender_email, domain: domain, Classification: classification }).\nf. Respond with the classification result and if the list has been updated successfully\n\nIf the user’s input does not refer to classifying an email, do not call any tool; respond directly to the user’s inquiry. Remind the user that this tool is most affective when the user refers to a message to classify. "
+        },
+        "promptType": "define"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "02168687-bbed-4b39-80de-423c2a2a77eb",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        540,
+        2400
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "k5QLUV8boAepwce0",
+          "name": "OpenAi account - default project"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "2237dfc1-ac37-43c8-9e9b-ca5658695b2a",
+      "name": "Get spam list",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        820,
+        2400
+      ],
+      "parameters": {
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultUrl": "",
+          "cachedResultName": "list"
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1iOYH829GJ-ytTlmz0Zsl875Efn1qyrwuv6Rx83N1QJU",
+          "cachedResultUrl": "",
+          "cachedResultName": "Email spam list"
+        },
+        "descriptionType": "manual",
+        "toolDescription": "Get row(s) in sheet in email spam list Google Sheets. It contains a list of emails that are considered spam and legit."
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dNmdYyKDCj9rTeSw",
+          "name": "Gsheet"
+        }
+      },
+      "typeVersion": 4.5
+    },
+    {
+      "id": "b5f66a06-791d-414b-b75e-97eb08bb1a41",
+      "name": "Discord - reply1",
+      "type": "n8n-nodes-base.discord",
+      "position": [
+        900,
+        2160
+      ],
+      "webhookId": "d20702a4-64e9-43e3-9259-b53bbf4f617e",
+      "parameters": {
+        "embeds": {
+          "values": [
+            {
+              "color": "#FFD900",
+              "author": "Email Feedback Bot",
+              "description": "={{ $json.output }}"
+            }
+          ]
+        },
+        "content": "=",
+        "guildId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').item.json.body.guild.id }}"
+        },
+        "options": {},
+        "resource": "message",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').item.json.body.channel.id }}"
+        },
+        "authentication": "oAuth2"
+      },
+      "credentials": {
+        "discordOAuth2Api": {
+          "id": "aAorRULaRsUXUcmc",
+          "name": "Discord - your_bot"
+        }
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "46628abc-5662-4ae5-b63a-115c36474722",
+      "name": "Get a message in Discord",
+      "type": "n8n-nodes-base.discordTool",
+      "position": [
+        700,
+        2400
+      ],
+      "webhookId": "795479d6-a960-4810-a4e8-96f5583d30a5",
+      "parameters": {
+        "guildId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('guildId', 'guildId of the discord reference message') }}"
+        },
+        "options": {},
+        "resource": "message",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('channelId', 'channelId of the discord reference message') }}"
+        },
+        "messageId": "={{ $fromAI('messageId', 'messageId of the discord reference message') }}",
+        "operation": "get",
+        "authentication": "oAuth2"
+      },
+      "credentials": {
+        "discordOAuth2Api": {
+          "id": "aAorRULaRsUXUcmc",
+          "name": "Discord - your_bot"
+        }
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "02cd39ce-397b-4793-a0f8-2987c19fbe3b",
+      "name": "update spam list",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        960,
+        2400
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "email": "={{ $fromAI('sender_email', 'email of the sender that wants to be labelled') }}",
+            "domain": "={{ $fromAI('domain', 'domain name of the sender that wants to be labelled') }}",
+            "labelled_by": "n8n",
+            "labelled_date": "={{ $now.format('dd/MM/yyyy') }}",
+            "Classification": "={{ $fromAI('classification', 'classigfication of the email whether spam or legit') }}"
+          },
+          "schema": [
+            {
+              "id": "domain",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "domain",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "email",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Classification",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Classification",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "labelled_by",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "labelled_by",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "labelled_date",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "labelled_date",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "operation": "appendOrUpdate",
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultUrl": "",
+          "cachedResultName": "list"
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1iOYH829GJ-ytTlmz0Zsl875Efn1qyrwuv6Rx83N1QJU",
+          "cachedResultUrl": "",
+          "cachedResultName": "Email spam list"
+        },
+        "descriptionType": "manual",
+        "toolDescription": "Update row(s) in sheet in email spam list Google Sheets. It can update or add a row of email, domain of the sender that is considered spam and legit."
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dNmdYyKDCj9rTeSw",
+          "name": "Gsheet "
+        }
+      },
+      "typeVersion": 4.5
+    },
+    {
+      "id": "0e411d2f-bf11-45cb-bc33-3710e60ce266",
+      "name": "AI Agent2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        600,
+        1600
+      ],
+      "parameters": {
+        "text": "=sender_email: {{ $json.from.text }}\nrecipient_email: {{ $json.to.text }}\nSubject: {{ $('Merge4').item.json.subject }}\nGmail labels: {{ $json.labelIds }}\nContent: {{ $('Merge4').item.json.text }}",
+        "options": {
+          "systemMessage": "You are an AI agent in an n8n workflow. You receive raw email objects with the following fields:  \n– `sender_email`  \n– `recipient_email`  \n– `subject`  \n– `content` (plain text)  \n– `labels` (Gmail labels)  \n– Optional: `image_url` (URL to image in email), `action_url` (main link to external content)\n\nYou also have access to a tool called `getSpamList()` which returns a list of sender emails and domains previously labeled as spam or legit.\n\n**Instructions:**\n\n1. **Classify as “Spam”** if any of the following are true:  \n   – The sender_email or its domain matches common spam sources (e.g., \"no-reply@\", \"offers@\", mass mailers, suspicious domains).  \n   – The content contains characteristics of spam: promotional offers, phishing attempts, irrelevant ads, mass marketing, or unsolicited content not relevant to the user or organization.  \n   – The sender_email or domain appears in the retrieved spam list.\n\n   If spam, return only:\n   ```json\n   {\n     \"priority\": \"Spam\"\n   }\nEnd execution.\n\nIf not spam, determine priority:\n– High: Time-sensitive emails from clients, leadership, legal, finance, or regarding contracts, deadlines, critical system issues, urgent decisions, or high-value opportunities.\n– Medium: Informative updates, meeting invites, team announcements, project updates, customer support, or internal collaboration threads that are useful but not urgent.\n– Low: Casual internal communication, newsletters, generic notifications, non-urgent follow-ups, or general FYI content.\n\nSummarize the email within 250 characters, include all key important information and numbers.\n\nPriority color mapping:\n– High: #00FF00\n– Medium: #0000FF\n– Low: #FF00000\n\nAlso include the image_url in the output if you find any relevant or important image url in the content. also include the action_url if you find any important url for the user to click"
+        },
+        "promptType": "define",
+        "hasOutputParser": true
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "bbae2069-47d3-4f55-a114-a4a9207759ad",
+      "name": "OpenAI Chat Model3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        580,
+        1800
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "k5QLUV8boAepwce0",
+          "name": "OpenAi account - default project"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "cbd46799-3228-4fb2-bdec-05419716c0c8",
+      "name": "Get spam list1",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        700,
+        1820
+      ],
+      "parameters": {
+        "options": {},
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultUrl": "",
+          "cachedResultName": "list"
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1iOYH829GJ-ytTlmz0Zsl875Efn1qyrwuv6Rx83N1QJU",
+          "cachedResultUrl": "",
+          "cachedResultName": "Email spam list"
+        },
+        "descriptionType": "manual",
+        "toolDescription": "Get row(s) in sheet in email spam list Google Sheets. It contains a list of emails that are considered spam and legit."
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dNmdYyKDCj9rTeSw",
+          "name": "Gsheet "
+        }
+      },
+      "typeVersion": 4.5
+    },
+    {
+      "id": "e82f45cd-2c46-48c9-abfe-5c10910035ee",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        280,
+        2080
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 1060,
+        "height": 500,
+        "content": "## Update spam list"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "ffe9fa99-a06a-4933-b05d-1fb3405c6966",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        280,
+        1480
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 1060,
+        "height": 580,
+        "content": "## Filter incoming message\n### Send important emails only"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "88c45a39-408c-4afa-ac18-841139f12247",
+      "name": "Structured Output Parser1",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        820,
+        1820
+      ],
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"from\": \"ceo@partnercompany.com\",\n  \"to\": \"jay@company.com\",\n  \"subject\": \"Urgent: Contract Finalization by Tomorrow\",\n  \"summary\": \"The CEO is requesting immediate action to finalize and sign the strategic partnership contract before tomorrow's deadline.\",\n  \"priority\": \"High\",\n  \"priority_color\": 16711680,\n  \"image_url\" : \"\",\n  \"action_url\" : \"\"\n}\n"
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "fd357e53-3a9e-4ade-8e5a-86f400f32e3a",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.discord",
+      "position": [
+        1160,
+        1580
+      ],
+      "webhookId": "9f1031cf-e3a3-4d33-b2cb-fbb7d8240c44",
+      "parameters": {
+        "embeds": {
+          "values": [
+            {
+              "url": "={{ $json.output.action_url }}",
+              "color": "={{ $json.output.priority_color }}",
+              "image": "={{ $json.output.image_url }}",
+              "title": "={{ $json.output.subject }}",
+              "author": "={{ $json.output.from }}",
+              "description": "={{ $json.output.summary }}"
+            }
+          ]
+        },
+        "guildId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1363069056558825554"
+        },
+        "options": {},
+        "resource": "message",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Merge4').item.json.discord_channel }}"
+        },
+        "authentication": "oAuth2"
+      },
+      "credentials": {
+        "discordOAuth2Api": {
+          "id": "aAorRULaRsUXUcmc",
+          "name": "Discord - webhook"
+        }
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "24d1119c-7982-4e88-a75a-f85b67ba0c6d",
+      "name": "If2",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        900,
+        1600
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "d8cf81aa-1b7c-4a54-87f0-2f86655c5875",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{$json.output}}",
+              "rightValue": "Spam"
+            },
+            {
+              "id": "81703823-b378-4831-ace1-5242d45e7c41",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{$json.output.priority}}",
+              "rightValue": "Spam"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "medium4": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "medium5": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "medium6": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "medium7": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Discord - reply1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get spam list": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "medium7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get spam list1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger1": {
+      "main": [
+        [
+          {
+            "node": "medium6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger2": {
+      "main": [
+        [
+          {
+            "node": "medium5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger3": {
+      "main": [
+        [
+          {
+            "node": "medium4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "update spam list": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message in Discord": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+
+Title: Daily routine discord bot
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        0
+      ],
+      "id": "9668eff4-0055-441b-8388-1e03ca557d6d",
+      "name": "Schedule Trigger - 10am"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "23d391d3-e5d0-81b1-b33d-dba3c784f28f",
+          "mode": "list",
+          "cachedResultName": "Habits",
+          "cachedResultUrl": "https://www.notion.so/23d391d3e5d081b1b33ddba3c784f28f"
+        },
+        "limit": 1,
+        "options": {
+          "sort": {
+            "sortValue": [
+              {
+                "timestamp": true,
+                "key": "created_time",
+                "direction": "descending"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        -128
+      ],
+      "id": "6bec8574-0cb2-41e3-90ff-3fe2643c5d49",
+      "name": "Get many database pages",
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionApi": {
+          "id": "qbPfcwnaNwyoOFVs",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nlet raw_json = $input.first().json;\nconst habitsDictionary = {};\nfor (const key in raw_json) {\n  if (key.startsWith('property_') && typeof raw_json[key] === 'boolean') {\n    const newKey = key.replace('property_', '');\n    habitsDictionary[newKey] = raw_json[key];\n  }\n}\n\n\nreturn habitsDictionary;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        -160
+      ],
+      "id": "b602b082-e1c0-47c8-86e0-77e9e210bd73",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1422615645262053592",
+          "mode": "list",
+          "cachedResultName": "n8n automations",
+          "cachedResultUrl": "https://discord.com/channels/1422615645262053592"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1422620312435949682",
+          "mode": "list",
+          "cachedResultName": "daily-habits",
+          "cachedResultUrl": "https://discord.com/channels/1422615645262053592/1422620312435949682"
+        },
+        "content": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -176
+      ],
+      "id": "37991f19-f8f3-4ed1-b968-c648a0b3dc37",
+      "name": "Send a message",
+      "webhookId": "10663c1c-b07d-4887-9b1e-8d8c3fa95c67",
+      "credentials": {
+        "discordBotApi": {
+          "id": "kmqwzMFmmQVx2o7t",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You will be provided a dictionary indicating the user's progress with their daily habits. This message is sent to them in the morning, give a personalized and friendly greeting for David. Your message should start with one sentence greeting the user, then immediately get to the core contents of what they've done and what they have yet to complete. \n\nEXAMPLE: \nINPUT: \"breakfast\": true,\n\"brush_teeth\": true,\n\"morning_meds\": true,\n\"wash_face\": false,\n\"evening_meds\": false\"\nOUTPUT: \"Good morning, David. So far today you've eaten breakfast, brushed your teeth, taken your meds, but you should still wash your face before you leave. Have an excellent day!\"\nThe length should remain between 2-6 sentences and you should change how you deliver the information each day slightly. \n\nACTUAL INPUT FOR THIS RESPONSE:\n{{ $json.toJsonString() }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        464,
+        -160
+      ],
+      "id": "9b7bac34-1e51-4bd7-962a-779daa7f71eb",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3.1:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        464,
+        80
+      ],
+      "id": "f54c50f9-a73d-41d6-ba8b-b4a201333723",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "4iCs3D7ucfD1YqM3",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger - 10am": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "601fecd3e7451a7c47548201a2550c179d3017fdba5f5f92f25fd0dd752d383b"
+  }
+}
